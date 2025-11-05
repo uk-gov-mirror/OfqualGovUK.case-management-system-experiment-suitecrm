@@ -48,7 +48,6 @@ stages:
             monitorWhen: 'always'
             severityThreshold: 'high'
             failOnIssues: false
-            containerRegistry: $(dockerRegistryServiceConnectionDev)
 
   - stage: Build
     displayName: Build and Push Docker Image
