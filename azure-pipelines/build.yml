@@ -33,6 +33,7 @@ stages:
             command: build
             repository: $(SNYK_DOCKER_REPOS)   #'suite-crm'
             dockerfile: '$(dockerfilePath)'
+            buildContext: '$(Build.SourcesDirectory)'
             containerRegistry: $(dockerRegistryServiceConnectionDev)
             tags: 'latest'
 
@@ -64,6 +65,7 @@ stages:
             repository: $(imageRepository)
             containerRegistry: $(dockerRegistryServiceConnectionDev)
             dockerfile: $(dockerfilePath)
+            buildContext: '$(Build.SourcesDirectory)'
             tags: |
               latest
               $(tag)
@@ -78,6 +80,7 @@ stages:
             repository: $(imageRepository)
             containerRegistry: $(dockerRegistryServiceConnectionProd)
             dockerfile: $(dockerfilePath)
+            buildContext: '$(Build.SourcesDirectory)'
             tags: |
               latest
               $(tag)
