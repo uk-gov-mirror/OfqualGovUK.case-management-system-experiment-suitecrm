@@ -1,0 +1,86 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: StaticAnalysis
+    displayName: Static Analysis and Security Scans
+    condition: always()
+    jobs:
+      - job: Snyk
+        displayName: Snyk Security Scans
+        steps:
+        - script: |
+            npm install -g snyk
+            snyk config set endpoint=$(SNYK_ENDPOINT)
+            snyk auth $(SNYK_TOKEN)
+            set +e
+          displayName: Install and Authenticate Snyk CLI
+
+        - task: SnykSecurityScan@1
+          displayName: 'Snyk scanning code'
+          inputs:
+            serviceConnectionEndpoint: 'snyk-integration-eu'
+            testType: 'code'
+            codeSeverityThreshold: 'high'
+            failOnIssues: false
+
+        - task: Docker@2
+          displayName: Build Docker Image
+          inputs:
+            command: build
+            repository: $(SNYK_DOCKER_REPOS)   #'suite-crm'
+            dockerfile: '$(dockerfilePath)'
+            buildContext: '$(Build.SourcesDirectory)'
+            containerRegistry: $(dockerRegistryServiceConnectionDev)
+            tags: 'latest'
+
+        - script: docker images
+          displayName: List Docker Images
+
+        - task: SnykSecurityScan@1
+          inputs:
+            serviceConnectionEndpoint: 'snyk-integration-eu'
+            testType: 'container'
+            dockerImageName: '$(registryPrefix)/$(SNYK_DOCKER_REPOS):latest'
+            dockerfilePath: '$(dockerfilePath)'
+            monitorWhen: 'always'
+            severityThreshold: 'high'
+            failOnIssues: false
+
+  - stage: Build
+    displayName: Build and Push Docker Image
+    condition: succeeded()
+    dependsOn: StaticAnalysis
+    jobs:
+      - job: BuildDev
+        displayName: Build and Push to Dev ACR
+        condition: and(succeeded(), or(startsWith(variables['build.sourceBranch'], 'refs/heads/releases'), startsWith(variables['build.sourceBranch'], 'refs/heads/main')))
+        steps:
+        - task: Docker@2
+          inputs:
+            command: buildAndPush
+            repository: $(imageRepository)
+            containerRegistry: $(dockerRegistryServiceConnectionDev)
+            dockerfile: $(dockerfilePath)
+            buildContext: '$(Build.SourcesDirectory)'
+            tags: |
+              latest
+              $(tag)
+
+      - job: BuildProd
+        displayName: Build and Push to Prod ACR
+        condition: and(succeeded(), startsWith(variables['build.sourceBranch'], 'refs/heads/releases'))
+        steps:
+        - task: Docker@2
+          inputs:
+            command: buildAndPush
+            repository: $(imageRepository)
+            containerRegistry: $(dockerRegistryServiceConnectionProd)
+            dockerfile: $(dockerfilePath)
+            buildContext: '$(Build.SourcesDirectory)'
+            tags: |
+              latest
+              $(tag)
