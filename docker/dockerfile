@@ -10,4 +10,3 @@ RUN find . -type d -not -perm 2755 -exec chmod 2755 {} \; && \
     find . -type f -not -perm 0644 -exec chmod 0644 {} \; && \
     find . ! -user daemon -exec chown daemon:daemon {} \;
 RUN ["chmod","+x", "bin/console"]
-RUN ["chmod","600","public/legacy/Api/V8/OAuth2/*.key"]
