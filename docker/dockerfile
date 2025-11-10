@@ -14,6 +14,3 @@ RUN chown -R daemon:daemon . && \
 
 # Run the following as the web user, Clear cache and perform a quick repair and rebuild
 USER daemon
-WORKDIR /opt/bitnami/suitecrm
-RUN php bin/console cache:clear && \
-    php bin/console scrm:quick-repair-and-rebuild
