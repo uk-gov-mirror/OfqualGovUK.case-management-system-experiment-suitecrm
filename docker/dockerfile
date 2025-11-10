@@ -2,6 +2,7 @@ FROM crofqappdev1.azurecr.io/ofqual/suitecrm-bitnami:latest
 
 # Copy Ofqual extension files into the SuiteCRM extensions directory
 COPY SuiteCRM/extensions/Ofqual /opt/bitnami/suitecrm/extensions/Ofqual
+COPY SuiteCRM/public/legacy/. /opt/bitnami/suitecrm/public/legacy/
 
 WORKDIR /opt/bitnami/suitecrm
 
@@ -11,3 +12,8 @@ RUN chown -R daemon:daemon . && \
     find . -type f -not -perm 0644 -exec chmod 0644 {} \; && \
     chmod +x bin/console
 
+# Run the following as the web user, Clear cache and perform a quick repair and rebuild
+USER daemon
+WORKDIR /opt/bitnami/suitecrm
+RUN php bin/console cache:clear && \
+    php bin/console scrm:quick-repair-and-rebuild

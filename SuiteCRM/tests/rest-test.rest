@@ -1,0 +1,84 @@
+@url=https://[::1]:8443/legacy/Api
+
+# @name login
+curl --location '{{url}}/access_token' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--data '{
+    "grant_type": "client_credentials",
+    "client_id": "<replace me>",
+    "client_secret": "<replace me>"
+}' 
+
+###
+
+@authToken={{login.response.body.access_token}}
+
+###Get ME
+# @name getme
+curl --location '{{url}}/V8/custom/oq-current-user' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--header 'authorization: Bearer {{authToken}}' \
+--header 'X-UserContext: PrivUser' \
+--request GET
+
+###
+@currentUser={{getme.response.body.data.id}}
+
+# @name createcase
+curl --location '{{url}}/V8/custom/oqmodule' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--header 'authorization: Bearer {{authToken}}' \
+--header 'X-UserContext: PrivUser' \
+--request POST \
+--data '{
+    "data": {    
+        "type": "Cases",
+        "attributes": {
+            "name": "Test Case from REST Client",
+            "description": "This is a test case created via REST Client",
+            "assigned_user_id": "{{currentUser}}"
+        }
+    }
+}'
+
+###
+@caseID={{createcase.response.body.data.id}}
+
+curl --location '{{url}}/V8/custom/oqmodule/Cases' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--header 'authorization: Bearer {{authToken}}' \
+--header 'X-UserContext: PrivUser' \
+--request GET
+
+###update the case
+
+curl --location '{{url}}/V8/custom/oqmodule' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--header 'authorization: Bearer {{authToken}}' \
+--header 'X-UserContext: PrivUser' \
+--request PATCH \
+--data '{
+    "data": {    
+        "type": "Cases",
+        "id": "{{caseID}}",
+        "attributes": {
+            "name": "Test Case from REST Client After update",
+            "description": "This is a test case created via REST Client"
+        }
+    }
+}'
+
+### Get the case by ID
+
+curl --location '{{url}}/V8/custom/oqmodule/Cases/{{caseID}}' \
+--header 'content-type: application/vnd.api+json' \
+--header 'accept: application/vnd.api+json' \
+--header 'authorization: Bearer {{authToken}}' \
+--header 'X-UserContext: PrivUser' \
+--request GET
+
