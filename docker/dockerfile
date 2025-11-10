@@ -11,6 +11,3 @@ RUN chown -R daemon:daemon . && \
     find . -type d -not -perm 2755 -exec chmod 2755 {} \; && \
     find . -type f -not -perm 0644 -exec chmod 0644 {} \; && \
     chmod +x bin/console
-
-# Run the following as the web user, Clear cache and perform a quick repair and rebuild
-USER daemon
